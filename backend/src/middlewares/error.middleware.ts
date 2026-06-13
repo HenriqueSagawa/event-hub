@@ -4,8 +4,8 @@ import type {
   NextFunction,
   ErrorRequestHandler,
 } from "express";
-import { ApiError } from "../errors/api-error.js";
-import { env } from "../config/env.js";
+import { ApiError } from "../errors/api-error";
+import { env } from "../config/env";
 
 export const errorMiddleware: ErrorRequestHandler = (
   error: Error,
