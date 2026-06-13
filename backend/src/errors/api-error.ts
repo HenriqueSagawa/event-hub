@@ -14,6 +14,18 @@ export class BadRequestBodyError extends ApiError {
   }
 }
 
+export class UnauthorizedError extends ApiError {
+  constructor(message: string = "Não Autorizado") {
+    super(401, message);
+  }
+}
+
+export class ForbiddenError extends ApiError {
+  constructor(message: string = "Acesso Proibido") {
+    super(403, message);
+  }
+}
+
 export class NotFoundError extends ApiError {
   constructor(message: string = "Recurso Não Encontrado") {
     super(404, message);
