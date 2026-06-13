@@ -9,7 +9,7 @@
     "test:watch": "jest --watchAll",
     "test:coverage": "jest --coverage",
     "dev": "tsx watch src/server.ts",
-    "build": "npm run clean && tsc && prisma generate",
+    "build": "npm run clean && prisma generate && tsc",
     "clean": "rimraf dist",
     "start": "node dist/server.js"
   },
