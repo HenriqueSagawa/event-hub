@@ -6,6 +6,7 @@ import type {
 } from "express";
 import { ApiError } from "../errors/api-error";
 import { env } from "../config/env";
+import { ZodError } from "zod";
 
 export const errorMiddleware: ErrorRequestHandler = (
   error: Error,
@@ -13,9 +14,21 @@ export const errorMiddleware: ErrorRequestHandler = (
   res: Response,
   next: NextFunction,
 ): void => {
-  const statusCode = error instanceof ApiError ? error.statusCode : 500;
-  const message =
+  let statusCode = error instanceof ApiError ? error.statusCode : 500;
+  let message =
     error instanceof ApiError ? error.message : "Erro Interno do Servidor";
+
+  if (error instanceof ZodError) {
+    statusCode = 400;
+    message = "Dados inválidos";
+    res.status(statusCode).json({
+      status: "error",
+      statusCode,
+      message,
+      errors: error.issues,
+    });
+    return;
+  }
 
   if (statusCode === 500) {
     console.error(`[Erro Crítico] ${error.stack || error.message}`);
