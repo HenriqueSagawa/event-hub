@@ -16,6 +16,10 @@ app.use(morgan("dev"));
 
 app.use("/api", router);
 
+app.use("/health", (req, res) => {
+  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
 app.use((req, res, next) => {
   next(new NotFoundError("Endpoint Não Encontrado"));
 });
