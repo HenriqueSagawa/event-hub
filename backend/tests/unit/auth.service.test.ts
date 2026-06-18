@@ -5,6 +5,7 @@ import { mailService } from '../../src/services/mail.service';
 describe('AuthService', () => {
   const userData = {
     email: 'test@example.com',
+    name: 'Test User',
     password: 'password123',
   };
 
@@ -14,6 +15,7 @@ describe('AuthService', () => {
       prismaMock.user.create.mockResolvedValue({
         id: 'user-id',
         email: userData.email,
+        name: userData.name,
         password: 'hashed-password',
         isVerified: false,
         createdAt: new Date(),

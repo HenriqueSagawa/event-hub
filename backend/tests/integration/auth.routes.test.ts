@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 describe('Auth Routes Integration', () => {
   const userData = {
     email: 'integration@example.com',
+    name: 'Integration User',
     password: 'password123',
   };
 
