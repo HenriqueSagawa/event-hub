@@ -1,10 +1,15 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { prisma } from '../config/prisma';
-import { env } from '../config/env';
-import { mailService } from './mail.service';
-import { BadRequestBodyError, UnauthorizedError } from '../errors/api-error';
-import { RegisterSchema, LoginSchema, VerifySchema, CompleteProfileSchema } from '../schemas/auth.schema';
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { prisma } from "../config/prisma";
+import { env } from "../config/env";
+import { mailService } from "./mail.service";
+import { BadRequestBodyError, UnauthorizedError } from "../errors/api-error";
+import {
+  RegisterSchema,
+  LoginSchema,
+  VerifySchema,
+  CompleteProfileSchema,
+} from "../schemas/auth.schema";
 
 class AuthService {
   async register(data: unknown) {
@@ -12,7 +17,7 @@ class AuthService {
 
     const userExists = await prisma.user.findUnique({ where: { email } });
     if (userExists) {
-      throw new BadRequestBodyError('Email já cadastrado');
+      throw new BadRequestBodyError("Email já cadastrado");
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -25,7 +30,9 @@ class AuthService {
       },
     });
 
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCode = Math.floor(
+      100000 + Math.random() * 900000,
+    ).toString();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
     await prisma.verificationCode.create({
@@ -38,7 +45,9 @@ class AuthService {
 
     await mailService.sendVerificationCode(email, verificationCode);
 
-    return { message: 'Usuário registrado. Verifique seu email para obter o código.' };
+    return {
+      message: "Usuário registrado. Verifique seu email para obter o código.",
+    };
   }
 
   async verifyEmail(data: unknown) {
@@ -50,19 +59,20 @@ class AuthService {
     });
 
     if (!user) {
-      throw new BadRequestBodyError('Usuário não encontrado');
+      throw new BadRequestBodyError("Usuário não encontrado");
     }
 
     if (user.isVerified) {
-      throw new BadRequestBodyError('Email já verificado');
+      throw new BadRequestBodyError("Email já verificado");
     }
 
     const validCode = user.verificationCodes.find(
-      (vc: { code: string; expiresAt: Date }) => vc.code === code && vc.expiresAt > new Date()
+      (vc: { code: string; expiresAt: Date }) =>
+        vc.code === code && vc.expiresAt > new Date(),
     );
 
     if (!validCode) {
-      throw new BadRequestBodyError('Código inválido ou expirado');
+      throw new BadRequestBodyError("Código inválido ou expirado");
     }
 
     await prisma.$transaction([
@@ -75,7 +85,7 @@ class AuthService {
       }),
     ]);
 
-    return { message: 'Email verificado com sucesso' };
+    return { message: "Email verificado com sucesso" };
   }
 
   async login(data: unknown) {
@@ -83,21 +93,25 @@ class AuthService {
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      throw new UnauthorizedError('Credenciais inválidas');
+      throw new UnauthorizedError("Credenciais inválidas");
     }
 
     if (!user.isVerified) {
-      throw new UnauthorizedError('Email não verificado');
+      throw new UnauthorizedError("Email não verificado");
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
-      throw new UnauthorizedError('Credenciais inválidas');
+      throw new UnauthorizedError("Credenciais inválidas");
     }
 
-    const token = jwt.sign({ sub: user.id, email: user.email }, env.JWT_SECRET, {
-      expiresIn: '1d',
-    });
+    const token = jwt.sign(
+      { sub: user.id, email: user.email },
+      env.JWT_SECRET,
+      {
+        expiresIn: "1d",
+      },
+    );
 
     return { token, user: { id: user.id, email: user.email, name: user.name } };
   }
@@ -124,26 +138,15 @@ class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedError('Usuário não encontrado');
+      throw new UnauthorizedError("Usuário não encontrado");
     }
 
     return user;
   }
 
   async completeProfile(userId: string, data: unknown) {
-    const { avatarUrl, course, semester, academicRecord, phone, githubUrl, linkedinUrl, interests, bio } = CompleteProfileSchema.parse(data);
-
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) {
-      throw new UnauthorizedError('Usuário não encontrado');
-    }
-    if (!user.isVerified) {
-      throw new BadRequestBodyError('Usuário não verificado. Verifique seu email primeiro.');
-    }
-
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: {
+    try {
+      const {
         avatarUrl,
         course,
         semester,
@@ -153,15 +156,40 @@ class AuthService {
         linkedinUrl,
         interests,
         bio,
-      },
-    });
+      } = CompleteProfileSchema.parse(data);
 
-    return { message: 'Perfil atualizado com sucesso', user: updatedUser };
-  } catch (error: any) {
-    if (error.code === 'P2002') {
-      throw new BadRequestBodyError('Academic record already in use');
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user) {
+        throw new UnauthorizedError("Usuário não encontrado");
+      }
+      if (!user.isVerified) {
+        throw new BadRequestBodyError(
+          "Usuário não verificado. Verifique seu email primeiro.",
+        );
+      }
+
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          avatarUrl: avatarUrl || null,
+          course,
+          semester,
+          academicRecord,
+          phone,
+          githubUrl: githubUrl || null,
+          linkedinUrl: linkedinUrl || null,
+          interests: interests ?? [],
+          bio: bio || null,
+        },
+      });
+
+      return { message: "Perfil atualizado com sucesso", user: updatedUser };
+    } catch (error: any) {
+      if (error.code === "P2002") {
+        throw new BadRequestBodyError("Academic record already in use");
+      }
+      throw error;
     }
-    throw error;
   }
 }
 

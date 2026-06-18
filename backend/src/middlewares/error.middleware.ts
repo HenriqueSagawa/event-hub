@@ -20,7 +20,7 @@ export const errorMiddleware: ErrorRequestHandler = (
 
   if (error instanceof ZodError) {
     statusCode = 400;
-    message = error.issues.length > 0 ? error.issues[0].message : "Dados inválidos";
+    message = error.issues[0]?.message ?? "Dados inválidos";
     res.status(statusCode).json({
       status: "error",
       statusCode,
