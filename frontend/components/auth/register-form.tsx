@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 
-const INSTITUTIONAL_DOMAINS = ["aluno.edu.br", "edu.br"]
+const INSTITUTIONAL_DOMAINS = ["uem.br"]
 
 function isInstitutionalEmail(email: string) {
   return INSTITUTIONAL_DOMAINS.some((domain) => email.toLowerCase().endsWith(`@${domain}`) || email.toLowerCase().endsWith(`.${domain}`))
@@ -38,7 +38,7 @@ export function RegisterForm() {
     setError(null)
 
     if (!isInstitutionalEmail(email)) {
-      setError("Use seu e-mail institucional (ex.: nome@aluno.edu.br).")
+      setError("Use seu e-mail institucional (ex.: ra@uem.br).")
       return
     }
     if (!passwordStrong) {
