@@ -7,6 +7,7 @@ import { Eye, EyeOff, Loader2, Mail, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import Link from "next/link"
 
 export function LoginForm() {
   const router = useRouter()
@@ -88,9 +89,9 @@ export function LoginForm() {
 
       <p className="text-center text-sm text-muted-foreground">
         Ainda não tem conta?{" "}
-        <a href="#" className="font-medium text-primary hover:underline">
+        <Link href="/registro" className="font-medium text-primary hover:underline">
           Criar conta
-        </a>
+        </Link>
       </p>
     </form>
   )

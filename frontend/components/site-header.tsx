@@ -39,7 +39,7 @@ export function SiteHeader() {
             <Link href="/login">Entrar</Link>
           </Button>
           <Button asChild>
-            <Link href="/login">Criar conta</Link>
+            <Link href="/registro">Criar conta</Link>
           </Button>
         </div>
 
