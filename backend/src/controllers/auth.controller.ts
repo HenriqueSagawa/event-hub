@@ -22,6 +22,12 @@ class AuthController {
     const user = await authService.getMe(userId);
     res.status(200).json(user);
   }
+
+  async completeProfile(req: Request, res: Response) {
+    const userId = req.userId!;
+    const result = await authService.completeProfile(userId, req.body);
+    res.status(200).json(result);
+  }
 }
 
 export const authController = new AuthController();

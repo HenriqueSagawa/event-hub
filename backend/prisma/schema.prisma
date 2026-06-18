@@ -13,9 +13,21 @@ datasource db {
 model User {
   id                String             @id @default(uuid())
   email             String             @unique
-  name              String             @default("")
+  name              String
   password          String
   isVerified        Boolean            @default(false)
+  
+  // Profile fields
+  avatarUrl         String?
+  course            String?
+  semester          Int?
+  academicRecord    String?            @unique
+  phone             String?
+  githubUrl         String?
+  linkedinUrl       String?
+  bio               String?
+  interests         String[]           @default([])
+
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   verificationCodes VerificationCode[]

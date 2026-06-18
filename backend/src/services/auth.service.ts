@@ -4,7 +4,7 @@ import { prisma } from '../config/prisma';
 import { env } from '../config/env';
 import { mailService } from './mail.service';
 import { BadRequestBodyError, UnauthorizedError } from '../errors/api-error';
-import { RegisterSchema, LoginSchema, VerifySchema } from '../schemas/auth.schema';
+import { RegisterSchema, LoginSchema, VerifySchema, CompleteProfileSchema } from '../schemas/auth.schema';
 
 class AuthService {
   async register(data: unknown) {
@@ -105,7 +105,22 @@ class AuthService {
   async getMe(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, name: true, isVerified: true, createdAt: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isVerified: true,
+        createdAt: true,
+        avatarUrl: true,
+        course: true,
+        semester: true,
+        academicRecord: true,
+        phone: true,
+        githubUrl: true,
+        linkedinUrl: true,
+        interests: true,
+        bio: true,
+      },
     });
 
     if (!user) {
@@ -113,6 +128,40 @@ class AuthService {
     }
 
     return user;
+  }
+
+  async completeProfile(userId: string, data: unknown) {
+    const { avatarUrl, course, semester, academicRecord, phone, githubUrl, linkedinUrl, interests, bio } = CompleteProfileSchema.parse(data);
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedError('Usuário não encontrado');
+    }
+    if (!user.isVerified) {
+      throw new BadRequestBodyError('Usuário não verificado. Verifique seu email primeiro.');
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        avatarUrl,
+        course,
+        semester,
+        academicRecord,
+        phone,
+        githubUrl,
+        linkedinUrl,
+        interests,
+        bio,
+      },
+    });
+
+    return { message: 'Perfil atualizado com sucesso', user: updatedUser };
+  } catch (error: any) {
+    if (error.code === 'P2002') {
+      throw new BadRequestBodyError('Academic record already in use');
+    }
+    throw error;
   }
 }
 

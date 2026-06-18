@@ -1,6 +1,7 @@
 import { authService } from '../../src/services/auth.service';
 import { prismaMock } from '../__mocks__/prisma';
 import { mailService } from '../../src/services/mail.service';
+import { BadRequestBodyError } from '../../src/errors/api-error';
 
 describe('AuthService', () => {
   const userData = {
@@ -126,6 +127,67 @@ describe('AuthService', () => {
       } catch (error: any) {
         expect(error.statusCode).toBe(401);
         expect(error.message).toBe('Email não verificado');
+      }
+    });
+  });
+
+  describe('completeProfile', () => {
+    const profileData = {
+      course: 'Computer Science',
+      semester: 5,
+      academicRecord: '123456789',
+      phone: '11999999999',
+      githubUrl: 'https://github.com/test',
+      linkedinUrl: 'https://linkedin.com/in/test',
+      bio: 'A test bio',
+      interests: ['coding', 'music'],
+      avatarUrl: 'https://example.com/avatar.jpg'
+    };
+
+    it('should complete profile successfully for a verified user', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({ id: 'user-id', isVerified: true } as any);
+      prismaMock.user.update.mockResolvedValue({ id: 'user-id', ...profileData } as any);
+
+      const result = await authService.completeProfile('user-id', profileData);
+
+      expect(result).toEqual({ message: 'Perfil atualizado com sucesso', user: { id: 'user-id', ...profileData } });
+      expect(prismaMock.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-id' },
+        data: profileData,
+      });
+    });
+
+    it('should throw if user is not verified', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({ id: 'user-id', isVerified: false } as any);
+
+      try {
+        await authService.completeProfile('user-id', profileData);
+        throw new Error('Should have thrown');
+      } catch (error: any) {
+        expect(error.statusCode).toBe(400);
+        expect(error.message).toBe('Usuário não verificado. Verifique seu email primeiro.');
+      }
+    });
+
+    it('should throw if academicRecord is not unique', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({ id: 'user-id', isVerified: true } as any);
+      
+      const prismaError = new Error('Unique constraint failed on the fields: (`academicRecord`)');
+      Object.defineProperty(prismaError, 'code', {
+        value: 'P2002',
+        writable: true,
+        configurable: true,
+        enumerable: true, // Make it enumerable
+      });
+      prismaMock.user.update.mockRejectedValueOnce(prismaError);
+
+      try {
+        await authService.completeProfile('user-id', profileData);
+        throw new Error('Should have thrown');
+      } catch (error: any) {
+        expect(error).toBeInstanceOf(BadRequestBodyError);
+        expect(error.statusCode).toBe(400);
+        expect(error.message).toContain('Academic record already in use');
       }
     });
   });

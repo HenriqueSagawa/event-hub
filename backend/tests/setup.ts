@@ -1,16 +1,24 @@
-// tests/setup.ts
-import './__mocks__/prisma';
+import { prismaMock } from './__mocks__/prisma';
+
+jest.mock('@prisma/client', () => ({
+  PrismaClient: jest.fn(() => prismaMock),
+}));
 
 jest.mock('../src/services/mail.service', () => ({
   mailService: {
-    sendVerificationCode: jest.fn().mockResolvedValue(undefined),
+    sendVerificationCode: jest.fn(),
   },
 }));
 
-process.env.JWT_SECRET = 'test-secret';
-process.env.SMTP_HOST = 'test-host';
-process.env.SMTP_PORT = '587';
-process.env.SMTP_USER = 'test-user';
-process.env.SMTP_PASS = 'test-pass';
-process.env.SMTP_FROM = 'test-from';
-process.env.DATABASE_URL = 'postgresql://user:pass@localhost:5432/test-db';
+// Set a consistent JWT secret for tests
+process.env.JWT_SECRET = 'test_jwt_secret';
+
+jest.mock('jsonwebtoken', () => ({
+  ...jest.requireActual('jsonwebtoken'),
+  verify: jest.fn((token, secret) => {
+    if (secret === 'test_jwt_secret') {
+      return { sub: 'mockUserId', email: 'integration@example.com' };
+    }
+    throw new Error('Invalid secret for JWT verification');
+  }),
+}));

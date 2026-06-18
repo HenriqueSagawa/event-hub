@@ -9,5 +9,6 @@ router.post('/register', authRateLimiter, authController.register);
 router.post('/verify', authRateLimiter, authController.verify);
 router.post('/login', authRateLimiter, authController.login);
 router.get('/me', authMiddleware, authController.getMe);
+router.put('/complete-profile', authMiddleware, authController.completeProfile);
 
 export { router as authRoutes };
