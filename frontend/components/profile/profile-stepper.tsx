@@ -3,6 +3,7 @@
 import type React from "react"
 import { useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useAuth } from "@/context/auth-context"
 import {
   ArrowLeft,
   ArrowRight,
@@ -83,12 +84,14 @@ function formatPhone(value: string) {
 export function ProfileStepper() {
   const router = useRouter()
   const params = useSearchParams()
+  const { completeProfile } = useAuth()
   const name = params.get("name") ?? ""
 
   const fileRef = useRef<HTMLInputElement>(null)
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<FormData>({
     photo: null,
     course: "",
@@ -128,21 +131,28 @@ export function ProfileStepper() {
     (step === 3 && data.phone.replace(/\D/g, "").length >= 10) ||
     (step === 4 && data.interests.length > 0)
 
-  function next() {
+  async function next() {
     if (step < STEPS.length) {
       setStep((s) => s + 1)
+      setError(null)
       return
     }
     setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
+    setError(null)
+    try {
+      await completeProfile(data)
       setDone(true)
       setTimeout(() => router.push("/"), 1600)
-    }, 1000)
+    } catch (err: any) {
+      setError(err.message || "Ocorreu um erro ao salvar seu perfil. Verifique as informações.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   function back() {
     setStep((s) => Math.max(1, s - 1))
+    setError(null)
   }
 
   const initials = name
@@ -392,6 +402,12 @@ export function ProfileStepper() {
           </div>
         )}
       </div>
+
+      {error && (
+        <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      )}
 
       {/* Navegação */}
       <div className="flex items-center justify-between gap-3">

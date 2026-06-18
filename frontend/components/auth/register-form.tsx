@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/context/auth-context"
 
 const INSTITUTIONAL_DOMAINS = ["uem.br"]
 
@@ -17,6 +18,7 @@ function isInstitutionalEmail(email: string) {
 
 export function RegisterForm() {
   const router = useRouter()
+  const { register } = useAuth()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -33,7 +35,7 @@ export function RegisterForm() {
   const passwordStrong = rules.length && rules.number && rules.letter
   const passwordsMatch = confirm.length > 0 && password === confirm
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
 
@@ -51,11 +53,15 @@ export function RegisterForm() {
     }
 
     setLoading(true)
-    // Simula criação da conta e segue para completar o perfil
-    setTimeout(() => {
-      const query = new URLSearchParams({ email, name })
-      router.push(`/completar-perfil?${query.toString()}`)
-    }, 900)
+    try {
+      await register(name, email, password)
+      const query = new URLSearchParams({ email })
+      router.push(`/confirmacao?${query.toString()}`)
+    } catch (err: any) {
+      setError(err.message || "Erro ao criar a conta. Tente novamente.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

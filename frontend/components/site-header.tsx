@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/auth-context";
 
 const navLinks = [
   { label: "Eventos", href: "#eventos" },
@@ -14,6 +15,7 @@ const navLinks = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
@@ -35,12 +37,25 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
-          <Button asChild variant="ghost">
-            <Link href="/login">Entrar</Link>
-          </Button>
-          <Button asChild>
-            <Link href="/registro">Criar conta</Link>
-          </Button>
+          {user ? (
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-medium text-muted-foreground">
+                Olá, <span className="text-foreground font-semibold">{user.name.split(" ")[0]}</span>
+              </span>
+              <Button onClick={logout} variant="outline" size="sm">
+                Sair
+              </Button>
+            </div>
+          ) : (
+            <>
+              <Button asChild variant="ghost">
+                <Link href="/login">Entrar</Link>
+              </Button>
+              <Button asChild>
+                <Link href="/registro">Criar conta</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         <button
@@ -67,14 +82,25 @@ export function SiteHeader() {
                 {link.label}
               </a>
             ))}
-            <div className="mt-2 flex flex-col gap-2">
-              <Button asChild variant="outline">
-                <Link href="/login">Entrar</Link>
-              </Button>
-              <Button asChild>
-                <Link href="/login">Criar conta</Link>
-              </Button>
-            </div>
+            {user ? (
+              <div className="mt-2 flex flex-col gap-2 px-3 py-2 border-t border-border">
+                <span className="text-sm font-medium text-muted-foreground mb-1">
+                  Olá, <span className="text-foreground font-semibold">{user.name}</span>
+                </span>
+                <Button onClick={() => { logout(); setOpen(false); }} variant="outline" className="w-full">
+                  Sair
+                </Button>
+              </div>
+            ) : (
+              <div className="mt-2 flex flex-col gap-2">
+                <Button asChild variant="outline" onClick={() => setOpen(false)}>
+                  <Link href="/login">Entrar</Link>
+                </Button>
+                <Button asChild onClick={() => setOpen(false)}>
+                  <Link href="/registro">Criar conta</Link>
+                </Button>
+              </div>
+            )}
           </nav>
         </div>
       )}

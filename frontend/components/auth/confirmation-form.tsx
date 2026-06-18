@@ -11,17 +11,20 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp"
 
+import { useAuth } from "@/context/auth-context"
+
 const RESEND_SECONDS = 30
 
 export function ConfirmationForm() {
   const router = useRouter()
   const params = useSearchParams()
-  const email = params.get("email") ?? "seu e-mail"
+  const email = params.get("email") ?? ""
+  const { verifyEmail } = useAuth()
 
   const [code, setCode] = useState("")
   const [loading, setLoading] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
-  const [error, setError] = useState(false)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [seconds, setSeconds] = useState(RESEND_SECONDS)
 
   useEffect(() => {
@@ -30,19 +33,18 @@ export function ConfirmationForm() {
     return () => clearTimeout(timer)
   }, [seconds])
 
-  function handleVerify() {
+  async function handleVerify() {
     setLoading(true)
-    setError(false)
-    setTimeout(() => {
+    setErrorMsg(null)
+    try {
+      await verifyEmail(email, code)
+      setConfirmed(true)
+      setTimeout(() => router.push(`/login?email=${encodeURIComponent(email)}`), 1400)
+    } catch (err: any) {
+      setErrorMsg(err.message || "Código inválido ou expirado. Verifique e tente novamente.")
+    } finally {
       setLoading(false)
-      // Demonstração: qualquer código terminando em "0" é inválido
-      if (code.length === 6 && !code.endsWith("0")) {
-        setConfirmed(true)
-        setTimeout(() => router.push("/"), 1400)
-      } else {
-        setError(true)
-      }
-    }, 900)
+    }
   }
 
   if (confirmed) {
@@ -92,7 +94,7 @@ export function ConfirmationForm() {
           value={code}
           onChange={(value) => {
             setCode(value)
-            setError(false)
+            setErrorMsg(null)
           }}
         >
           <InputOTPGroup>
@@ -104,9 +106,9 @@ export function ConfirmationForm() {
             <InputOTPSlot index={5} />
           </InputOTPGroup>
         </InputOTP>
-        {error && (
+        {errorMsg && (
           <p className="text-sm text-destructive" role="alert">
-            Código inválido. Verifique e tente novamente.
+            {errorMsg}
           </p>
         )}
       </div>

@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import Link from "next/link"
 import { LoginForm } from "@/components/auth/login-form"
 import { AuthAside } from "@/components/auth/auth-aside"
@@ -21,7 +22,9 @@ export default function LoginPage() {
                 Entre com seu e-mail acadêmico para acessar seus eventos.
               </p>
             </div>
-            <LoginForm />
+            <Suspense fallback={null}>
+              <LoginForm />
+            </Suspense>
           </div>
         </div>
       </div>

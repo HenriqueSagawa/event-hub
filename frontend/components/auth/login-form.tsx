@@ -2,28 +2,50 @@
 
 import type React from "react"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Eye, EyeOff, Loader2, Mail, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
+import { useAuth } from "@/context/auth-context"
 
 export function LoginForm() {
   const router = useRouter()
-  const [email, setEmail] = useState("")
+  const searchParams = useSearchParams()
+  const { login } = useAuth()
+  const initialEmail = searchParams ? (searchParams.get("email") ?? "") : ""
+  
+  const [email, setEmail] = useState(initialEmail)
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
+    setError(null)
 
-    setTimeout(() => {
-      const params = new URLSearchParams({ email })
-      router.push(`/confirmacao?${params.toString()}`)
-    }, 900)
+    try {
+      const loggedUser = await login(email, password)
+      // Verifica se o perfil do usuário está completo
+      if (!loggedUser.course || !loggedUser.academicRecord) {
+        const params = new URLSearchParams({ email: loggedUser.email, name: loggedUser.name })
+        router.push(`/completar-perfil?${params.toString()}`)
+      } else {
+        router.push("/")
+      }
+    } catch (err: any) {
+      if (err.message === "Email não verificado") {
+        // Redireciona para tela de confirmação se e-mail não estiver verificado
+        router.push(`/confirmacao?email=${encodeURIComponent(email)}`)
+      } else {
+        setError(err.message || "Credenciais inválidas. Verifique e tente novamente.")
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -76,11 +98,17 @@ export function LoginForm() {
         </div>
       </div>
 
+      {error && (
+        <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      )}
+
       <Button type="submit" size="lg" disabled={loading}>
         {loading ? (
           <>
             <Loader2 className="size-4 animate-spin" />
-            Enviando código...
+            Entrando...
           </>
         ) : (
           "Entrar"
